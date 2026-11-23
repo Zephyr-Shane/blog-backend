@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szenith.ai.infrastructure.dao.MediaReferenceMapper">
+
+    <!--
+      媒体引用扫描：用户内容以 /media/{uuid} 保存图片地址，
+      因此按资源唯一 id 在各内容表的图片字段中检索即可，参数全部绑定。
+      新增可引用字段时，在此追加一条 UNION ALL 分支即可。
+    -->
+    <select id="selectByResourceId" resultType="com.szenith.ai.domain.blog.model.valobj.MediaReference">
+        SELECT * FROM (
+            SELECT 'post' AS type, title AS name, '封面' AS field
+            FROM blog_post
+            WHERE cover_image LIKE CONCAT('%/media/', #{resourceId}, '%')
+
+            UNION ALL
+            SELECT 'post' AS type, title AS name, '正文' AS field
+            FROM blog_post
+            WHERE content LIKE CONCAT('%/media/', #{resourceId}, '%')
+
+            UNION ALL
+            SELECT 'moment' AS type,
+                   COALESCE(NULLIF(LEFT(content, 30), ''), '生活动态') AS name,
+                   '配图' AS field
+            FROM blog_moment
+            WHERE images LIKE CONCAT('%/media/', #{resourceId}, '%')
+
+            UNION ALL
+            SELECT 'moment' AS type,
+                   COALESCE(NULLIF(LEFT(content, 30), ''), '生活动态') AS name,
+                   '正文' AS field
+            FROM blog_moment
+            WHERE content LIKE CONCAT('%/media/', #{resourceId}, '%')
+
+            UNION ALL
+            SELECT 'interview' AS type, title AS name, '正文' AS field
+            FROM blog_interview
+            WHERE content LIKE CONCAT('%/media/', #{resourceId}, '%')
+
+            UNION ALL
+            SELECT 'link' AS type, name AS name, '图标' AS field
+            FROM blog_link
+            WHERE logo LIKE CONCAT('%/media/', #{resourceId}, '%')
+
+            UNION ALL
+            SELECT 'link' AS type, name AS name, '描述' AS field
+            FROM blog_link
+            WHERE description LIKE CONCAT('%/media/', #{resourceId}, '%')
+
+            UNION ALL
+            SELECT 'site-config' AS type, '站点配置' AS name, '头像' AS field
+            FROM blog_site_config
+            WHERE avatar LIKE CONCAT('%/media/', #{resourceId}, '%')
+        ) refs
+        ORDER BY type, name
+    </select>
+</mapper>

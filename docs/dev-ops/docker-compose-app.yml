@@ -1,0 +1,56 @@
+# /usr/local/bin/docker-compose -f /docs/dev-ops/environment/environment-docker-compose-2.4.yml up -d
+version: '3.8'
+# docker-compose -f docker-compose-app.yml up -d
+# 你需要修改shenzhien为你自身系统的仓库名
+services:
+  zephyr-blog-backend:
+    image: crpi-aryws89tr60k6fmc.cn-hangzhou.personal.cr.aliyuncs.com/shenzhien/zephyr-blog-backend:1.0
+    container_name: zephyr-blog-backend
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=PRC
+      - SERVER_PORT=8080
+      # 数据库走 Docker 网络内的 MySQL 容器，实际容器名是 mysql8。
+      # 关键：mysql8 必须和后端在同一个 my-network，否则容器名无法解析（UnknownHostException）。
+      # 不能用 127.0.0.1——那指向后端容器自身。
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql8:3306/zephyr_blog?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD:-584520Shen}
+      # 上传资源的公网回显地址，不能用 localhost，否则线上图片链接失效。
+      # @Value("${blog.upload.public-url}") 两种 relaxed 形式都写上确保覆盖生效。
+      - BLOG_UPLOAD_PUBLICURL=http://121.196.234.229:8080/api/media
+      - BLOG_UPLOAD_PUBLIC_URL=http://121.196.234.229:8080/api/media
+    volumes:
+      - ./log:/data/log
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - my-network
+
+  ## 前端服务，注意 image 如果你有自己的镜像，记得更换。
+  zephyr-blog-frontend:
+    container_name: zephyr-blog-frontend
+    image: crpi-aryws89tr60k6fmc.cn-hangzhou.personal.cr.aliyuncs.com/shenzhien/zephyr-blog-frontend:1.0
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      # 客户端（浏览器）用的公网地址，在 build 时已写死进镜像；运行时此项对浏览器无效。
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://121.196.234.229:8080/api}
+      # 服务端 SSR 用的内网地址：容器内访问本机公网 IP 会被云厂商拦截而超时，
+      # 改走 Docker 网络内的容器名（运行时环境变量，无需重新构建镜像）。
+      - API_BASE_URL_INTERNAL=http://zephyr-blog-backend:8080/api
+      - NODE_ENV=production
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    # my-network 已由 docker network create 手动创建，mysql8 也已接入。
+    # 声明 external 让 compose 直接复用，避免标签不匹配（com.docker.compose.network）报错。
+    external: true

@@ -1,0 +1,77 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  # 契约要求 ISO8601 时间原样输出，不转 UTC
+
+# 线程池配置
+thread:
+  pool:
+    executor:
+      config:
+        core-pool-size: 20
+        max-pool-size: 50
+        keep-alive-time: 5000
+        block-queue-size: 5000
+        policy: CallerRunsPolicy
+
+spring:
+  datasource:
+    username: root
+    password: 584520Shen
+    url: jdbc:mysql://mysql8:3306/zephyr_blog?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  hikari:
+    pool-name: ZephyrHikariCP
+    minimum-idle: 5
+    maximum-pool-size: 20
+    auto-commit: true
+    connection-timeout: 30000
+    connection-test-query: SELECT 1
+  type: com.zaxxer.hikari.HikariDataSource
+  jackson:
+    default-property-inclusion: always
+    time-zone: GMT+8
+
+# MyBatis：下划线列名自动映射驼峰属性；时间字段以 ISO 字符串存储，无需类型处理器
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+
+# JWT 签名密钥与有效期（生产环境请通过环境变量覆盖）
+blog:
+  jwt:
+    secret: zephyr-blog-dev-secret-2026-change-me-in-prod
+    ttl-hours: 72
+  upload:
+    # 上传资源二进制落库；public-url 用于生成存进内容字段的完整可访问地址
+    # 后端 8080 与前端 8081 分离，必须用完整地址，相对路径会错误指向前端
+    public-url: http://服务器IP:8080/api/media
+    max-size-mb: 5
+  # 评论批量校验：命中规则自动隐藏，后台评论管理可复核恢复
+  moderation:
+    enabled: true
+    sensitive-words:
+      - 博彩
+      - 赌博
+      - 刷单
+      - 代开发票
+      - 加微信
+    blocked-domains:
+      - bit.ly
+      - tinyurl.com
+    min-length: 2
+    max-links: 1
+    duplicate-threshold: 3
+    scan-days: 7
+    limit: 500
+    fixed-delay-ms: 300000
+    initial-delay-ms: 60000
+
+logging:
+  level:
+    root: info
+    com.szenith.ai: debug
+  config: classpath:logback-spring.xml

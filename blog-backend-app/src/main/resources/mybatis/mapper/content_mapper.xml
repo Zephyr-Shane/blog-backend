@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szenith.ai.infrastructure.dao.ContentMapper">
+
+    <!-- 动态表名由仓储层白名单控制，列以 SELECT * + 下划线转驼峰返回 Map -->
+    <select id="listPublished" resultType="java.util.HashMap">
+        SELECT * FROM ${table} WHERE status = 'published' ORDER BY published_at DESC
+    </select>
+
+    <select id="listAll" resultType="java.util.HashMap">
+        SELECT * FROM ${table} ORDER BY created_at DESC
+    </select>
+
+    <select id="findById" resultType="java.util.HashMap">
+        SELECT * FROM ${table} WHERE id = #{id}
+    </select>
+
+    <select id="findBySlug" resultType="java.util.HashMap">
+        SELECT * FROM blog_post WHERE slug = #{slug}
+    </select>
+
+    <insert id="insert" parameterType="map" useGeneratedKeys="true" keyProperty="row.id">
+        INSERT INTO ${table}
+        (<foreach collection="row" index="key" item="val" separator=",">${key}</foreach>)
+        VALUES
+        (<foreach collection="row" index="key" item="val" separator=",">#{val}</foreach>)
+    </insert>
+
+    <update id="update">
+        UPDATE ${table} SET ${sets} WHERE id = #{id}
+    </update>
+    <delete id="delete">
+        DELETE FROM ${table} WHERE id = #{id}
+    </delete>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM ${table}
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM ${table} WHERE status = #{status}
+    </select>
+
+</mapper>

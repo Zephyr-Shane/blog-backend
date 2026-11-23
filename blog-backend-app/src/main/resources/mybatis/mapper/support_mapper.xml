@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szenith.ai.infrastructure.dao.SupportMapper">
+
+    <!-- ============ Tag ============ -->
+    <select id="listTags" resultType="java.util.HashMap">
+        SELECT id, name, slug, category FROM blog_tag ORDER BY id
+    </select>
+    <select id="findTagById" resultType="java.util.HashMap">
+        SELECT id, name, slug, category FROM blog_tag WHERE id = #{id}
+    </select>
+    <select id="findTagBySlug" resultType="java.util.HashMap">
+        SELECT id, name, slug, category FROM blog_tag WHERE slug = #{slug}
+    </select>
+    <insert id="insertTag" parameterType="map" useGeneratedKeys="true" keyProperty="row.id">
+        INSERT INTO blog_tag (<foreach collection="row" index="key" item="val" separator=",">${key}</foreach>)
+        VALUES (<foreach collection="row" index="key" item="val" separator=",">#{val}</foreach>)
+    </insert>
+    <update id="updateTag">UPDATE blog_tag SET ${sets} WHERE id = #{id}</update>
+    <delete id="deleteTag">DELETE FROM blog_tag WHERE id = #{id}</delete>
+    <select id="findTagsByTargets" resultType="java.util.HashMap">
+        SELECT ct.target_id AS targetId, t.id, t.name, t.slug, t.category
+        FROM blog_content_tag ct JOIN blog_tag t ON ct.tag_id = t.id
+        WHERE ct.target_type = #{targetType}
+        AND ct.target_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+    <!-- ============ Comment ============ -->
+    <select id="listComments" resultType="java.util.HashMap">
+        SELECT * FROM blog_comment ORDER BY created_at DESC
+    </select>
+    <select id="listApprovedComments" resultType="java.util.HashMap">
+        SELECT * FROM blog_comment
+        WHERE target_type = #{targetType} AND target_id = #{targetId} AND status = 'approved'
+        ORDER BY created_at ASC
+    </select>
+    <select id="findCommentById" resultType="java.util.HashMap">
+        SELECT * FROM blog_comment WHERE id = #{id}
+    </select>
+    <insert id="insertComment" parameterType="map" useGeneratedKeys="true" keyProperty="row.id">
+        INSERT INTO blog_comment (<foreach collection="row" index="key" item="val" separator=",">${key}</foreach>)
+        VALUES (<foreach collection="row" index="key" item="val" separator=",">#{val}</foreach>)
+    </insert>
+    <update id="updateComment">UPDATE blog_comment SET ${sets} WHERE id = #{id}</update>
+    <delete id="deleteComment">DELETE FROM blog_comment WHERE id = #{id}</delete>
+    <select id="countCommentsByStatus" resultType="long">
+        SELECT COUNT(*) FROM blog_comment WHERE status = #{status}
+    </select>
+    <select id="countApprovedComments" resultType="long">
+        SELECT COUNT(*) FROM blog_comment WHERE target_type = #{targetType} AND target_id = #{targetId} AND status = 'approved'
+    </select>
+
+    <select id="listCommentsByStatusSince" resultType="java.util.HashMap">
+        SELECT * FROM blog_comment
+        WHERE status = #{status} AND created_at &gt;= #{since}
+        ORDER BY created_at DESC LIMIT #{limit}
+    </select>
+    <select id="listRecentApprovedComments" resultType="java.util.HashMap">
+        SELECT * FROM blog_comment
+        WHERE status = 'approved'
+        ORDER BY created_at DESC LIMIT #{limit}
+    </select>
+
+    <!-- ============ Like ============ -->
+    <select id="findLike" resultType="java.util.HashMap">
+        SELECT * FROM blog_like WHERE visitor_id = #{visitorId} AND target_type = #{targetType} AND target_id = #{targetId}
+    </select>
+    <insert id="insertLike" parameterType="map" useGeneratedKeys="true" keyProperty="row.id">
+        INSERT INTO blog_like (<foreach collection="row" index="key" item="val" separator=",">${key}</foreach>)
+        VALUES (<foreach collection="row" index="key" item="val" separator=",">#{val}</foreach>)
+    </insert>
+    <delete id="deleteLike">
+        DELETE FROM blog_like WHERE visitor_id = #{visitorId} AND target_type = #{targetType} AND target_id = #{targetId}
+    </delete>
+    <select id="countLikesByTarget" resultType="long">
+        SELECT COUNT(*) FROM blog_like WHERE target_type = #{targetType} AND target_id = #{targetId}
+    </select>
+
+    <!-- ============ SiteConfig ============ -->
+    <select id="getSiteConfig" resultType="java.util.HashMap">
+        SELECT * FROM blog_site_config WHERE id = 1
+    </select>
+    <update id="updateSiteConfig">UPDATE blog_site_config SET ${sets} WHERE id = 1</update>
+
+    <!-- ============ User ============ -->
+    <select id="listUsers" resultType="java.util.HashMap">
+        SELECT id, email, name, role, password_hash FROM blog_user ORDER BY id
+    </select>
+    <select id="findUserById" resultType="java.util.HashMap">
+        SELECT id, email, name, role, password_hash FROM blog_user WHERE id = #{id}
+    </select>
+    <select id="findUserByEmail" resultType="java.util.HashMap">
+        SELECT id, email, name, role, password_hash FROM blog_user WHERE email = #{email}
+    </select>
+    <insert id="insertUser" parameterType="map" useGeneratedKeys="true" keyProperty="row.id">
+        INSERT INTO blog_user (<foreach collection="row" index="key" item="val" separator=",">${key}</foreach>)
+        VALUES (<foreach collection="row" index="key" item="val" separator=",">#{val}</foreach>)
+    </insert>
+    <update id="updateUser">UPDATE blog_user SET ${sets} WHERE id = #{id}</update>
+    <delete id="deleteUser">DELETE FROM blog_user WHERE id = #{id}</delete>
+
+</mapper>

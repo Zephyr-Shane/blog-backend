@@ -1,0 +1,5 @@
+spring:
+  config:
+    name: zephyr-blog-backend
+  profiles:
+    active: dev

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.szenith.ai.infrastructure.dao.UploadMapper">
+
+    <resultMap id="resourceMap" type="com.szenith.ai.domain.blog.model.valobj.UploadedResource">
+        <id property="id" column="id"/>
+        <result property="category" column="category"/>
+        <result property="originalName" column="original_name"/>
+        <result property="storedName" column="stored_name"/>
+        <result property="mimeType" column="mime_type"/>
+        <result property="size" column="size"/>
+        <result property="data" column="data" jdbcType="BLOB"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- id 由应用生成 UUID 显式写入；url 由服务层按 public-url + id 生成，不落库 -->
+    <insert id="insert" parameterType="map">
+        INSERT INTO blog_upload (id, category, original_name, stored_name, mime_type, size, data, created_at)
+        VALUES (#{row.id}, #{row.category}, #{row.originalName}, #{row.storedName}, #{row.mimeType},
+                #{row.size}, #{row.data,jdbcType=BLOB}, #{row.createdAt})
+    </insert>
+
+    <select id="selectById" resultMap="resourceMap">
+        SELECT id, category, original_name, stored_name, mime_type, size, data, created_at
+        FROM blog_upload WHERE id = #{id}
+    </select>
+
+    <select id="selectList" resultMap="resourceMap">
+        SELECT id, category, original_name, stored_name, mime_type, size, created_at
+        FROM blog_upload
+        <where>
+            <if test="category != null and category != ''">category = #{category}</if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM blog_upload WHERE id = #{id}
+    </delete>
+</mapper>
